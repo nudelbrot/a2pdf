@@ -45,7 +45,7 @@ If your deck contains any images you want to include, you have to copy those
 
 Start A2PDF on the command-line:
 
-    java -jar a2pdf.jar PATH_TO_DECK_FILE PATH_TO_OUTPUT_FILE
+    java -jar a2pdf.jar -i PATH_TO_DECK_FILE -o PATH_TO_OUTPUT_FILE
 	
 with:
 
@@ -68,7 +68,8 @@ Some duplex printers also allow you to automatically print two PDFs at the same
 ## Tweak PDF output
 
 You may edit **template_front.txt** and **template_back.txt** in the application
- directory to change PDF appearance.
+ directory to change PDF appearance. You can also use the -tf and -tb switch to 
+point to alternative front or back templates.
 
 This requires a basic understanding of HTML and/or CSS. For example, you can
  resize the text on your cards by changing the **font-size** attribute.
