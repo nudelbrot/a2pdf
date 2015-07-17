@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Vector;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Formats a deck of cards by applying a template from a file.
@@ -17,19 +19,21 @@ import org.apache.commons.io.FileUtils;
  */
 public class HTMLFormatter {
 
-	private String templateName = "template";
-	private int side;
+	public static final int SIDE_FRONT = 0;
+	public static final int SIDE_BACK = 1;
+	private File templateFront;
+	private File templateBack;
 	private String template;
+	private Logger logger;
 
 	/**
 	 * @param templateName
 	 *            file name of the template to use.
-	 * @param side
-	 *            card side. 0: front side, 1: back side
 	 */
-	public HTMLFormatter(String templateName, int side) {
-		this.templateName = templateName;
-		this.side = side;
+	public HTMLFormatter(File templateFront, File templateBack) {
+		this.templateBack=templateBack;
+		this.templateFront=templateFront;
+		logger = LoggerFactory.getLogger(HTMLFormatter.class);
 	}
 
 	/**
@@ -40,16 +44,20 @@ public class HTMLFormatter {
 	 * 
 	 * @return
 	 */
-	private void setTemplate() {
-		String sideName = (side == 0 ? "front" : "back");
-		File templateFile = new File(Util.getJARFileLocation(), String.format(
-				"%s_%s.txt", templateName, sideName));
-		System.out.println("Looking for template file: "
+	private void setTemplate(int side) {
+		File templateFile;
+		if (side == SIDE_FRONT) {
+			templateFile = templateFront;
+		} else {
+			templateFile = templateBack;
+		}
+		logger.debug("Looking for template file: "
 				+ templateFile.getAbsolutePath());
 
 		try {
 			this.template = FileUtils.readFileToString(templateFile, "UTF-8");
 		} catch (IOException e) {
+			logger.warn("template not found: " + templateFile.getAbsolutePath());
 			this.template = "<html><body>Error: template file not found in directry</body></html>";
 		}
 	}
@@ -80,7 +88,7 @@ public class HTMLFormatter {
 	 */
 	public List<String> format(Deck deck, int side) {
 		List<String> htmlContent = new Vector<String>();
-		setTemplate();
+		setTemplate(side);
 		for (int i = 0; i < deck.getCards().size(); i++) {
 			Card c = deck.getCard(i);
 			htmlContent.add(fillTemplate(c.getFront(), c.getBack()));

@@ -28,6 +28,10 @@ import java.io.OutputStream;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
 import com.lowagie.text.DocumentException;
@@ -40,10 +44,21 @@ public class Anki2PDF {
 
 	private Settings settings;
 	private Deck deck;
+	public Logger logger;
 
-	public Anki2PDF() {
-		this.settings = new Settings();
+	public Anki2PDF(Settings settings) {
+		this.settings = settings;
 		this.deck = new Deck();
+		if (settings.getDebugging()) {
+			System.setProperty(
+					org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
+		}
+		if (settings.getVerbose()) {
+			System.setProperty(
+					org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
+		}
+		logger = LoggerFactory.getLogger(Anki2PDF.class);
+
 	}
 
 	/**
@@ -63,30 +78,27 @@ public class Anki2PDF {
 	}
 
 	public void run() {
-		try {
-			this.deck = new DeckFileParser(this.settings.getDeckFile())
-					.processDeck();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		this.deck = new DeckFileParser(this.settings.getDeckFile())
+				.processDeck();
 
 		// generate different PDFs for each side. 0: front side, 1: back side
+		HTMLFormatter htmlFormatter = new HTMLFormatter(
+				settings.getTemplateFront(), settings.getTemplateBack());
 		for (int i = 0; i <= 1; i++) {
 			try {
-				// TODO make template name configurable. This requires an actual
-				// command-line parser, see main method.
-				HTMLFormatter htmlFormatter = new HTMLFormatter("template", i);
 				List<String> currentSideContent = htmlFormatter.format(
 						this.deck, i);
 
 				generatePDF(currentSideContent, getCurrentOutputFile(i));
 			} catch (DocumentException e) {
-				e.printStackTrace();
+				logger.error(e.getMessage());
+				logger.debug("", e);
 			} catch (IOException e) {
-				e.printStackTrace();
+				logger.error(e.getMessage());
+				logger.debug("", e);
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error(e.getMessage());
+				logger.debug("", e);
 			}
 		}
 
@@ -101,34 +113,24 @@ public class Anki2PDF {
 	 *            not equal to the deck export directory
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {
-		Anki2PDF anki2PDF = new Anki2PDF();
-
-		// check for invalid deck file
-		if (args.length < 1 || !new File(args[0]).canRead()) {
-			error("Please specify a valid deck export file");
-			return;
-		} else {
-			anki2PDF.settings.setDeckFile(new File(args[0]));
+	public static void main(String[] args) {
+		Settings settings = new Settings();
+		CmdLineParser parser = new CmdLineParser(settings);
+		try {
+			parser.parseArgument(args);
+		} catch (CmdLineException e) {
+			System.err.println(e.getMessage());
+			System.err
+					.println("java -jar myprogram.jar [options...] arguments...");
+			parser.printUsage(System.err);
+			System.exit(1);
 		}
 
-		// check for invalid output file
-		if (args.length < 2) {
-			File tempFile = File.createTempFile(anki2PDF.settings.getDeckFile()
-					.getName(), ".pdf");
-			warn("Output directory not specified or not writable. Creating temporary file in this directory instead: "
-					+ tempFile);
-			anki2PDF.settings.setOutputFile(tempFile);
-		} else {
-			anki2PDF.settings.setOutputFile(new File(args[1]));
-		}
-
+		Anki2PDF anki2PDF = new Anki2PDF(settings);
 		// set a valid base URI for images to display correctly
-		anki2PDF.settings.setBaseURI(String.format("file:///%s/",
-				anki2PDF.settings.getDeckFile().getParentFile()
-						.getAbsolutePath().replace("\\", "/")));
-
-		System.out.println("Base URI: " + anki2PDF.settings.getBaseURI());
+		anki2PDF.settings.setBaseURI(anki2PDF.settings.getDeckFile().toURI()
+				.toASCIIString());
+		anki2PDF.logger.debug("Base URI: " + anki2PDF.settings.getBaseURI());
 
 		anki2PDF.run();
 
@@ -141,7 +143,6 @@ public class Anki2PDF {
 		try {
 			os = new FileOutputStream(outputFile);
 			ITextRenderer renderer = new ITextRenderer();
-
 			renderer.setDocumentFromString(content.get(0),
 					settings.getBaseURI());
 			renderer.layout();
@@ -158,7 +159,7 @@ public class Anki2PDF {
 			// complete the PDF
 			renderer.finishPDF();
 
-			System.out.println("PDF File with " + content.size()
+			logger.debug("PDF File with " + content.size()
 					+ " documents rendered as PDF to " + outputFile);
 		} finally {
 			if (os != null) {
@@ -169,13 +170,4 @@ public class Anki2PDF {
 			}
 		}
 	}
-
-	public static void error(String s) {
-		System.out.println("Error: " + s);
-	}
-
-	public static void warn(String s) {
-		System.out.println("Warning: " + s);
-	}
-
 }

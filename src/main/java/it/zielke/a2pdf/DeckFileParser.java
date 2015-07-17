@@ -4,10 +4,13 @@ import it.zielke.a2pdf.data.Deck;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Parses Anki deck export files and returns the decks found.
@@ -17,18 +20,16 @@ public class DeckFileParser {
 
 	private File deckFile;
 	private Deck deck;
-
-	private DeckFileParser() {
-		deck = new Deck();
-	}
+	private Logger logger;
 
 	/**
 	 * @param deckFile
 	 *            an Anki TXT deck file
 	 */
 	public DeckFileParser(File deckFile) {
-		this();
+		deck = new Deck();
 		this.deckFile = deckFile;
+		logger = LoggerFactory.getLogger(DeckFileParser.class);
 	}
 
 	/**
@@ -39,17 +40,29 @@ public class DeckFileParser {
 	 * @throws IOException
 	 *             if the deck text file could not be read
 	 */
-	public Deck processDeck() throws IOException {
-		parse(deckFile);
+	public Deck processDeck() {
+		boolean errors = parse(deckFile);
 		return deck;
+
 	}
 
-	private void parse(File f) throws IOException {
-		List<String> lines = IOUtils.readLines(new FileInputStream(deckFile),
-				"UTF-8");
-		for (String line : lines) {
-			parseLine(line);
+	private boolean parse(File f) {
+		List<String> lines;
+		try {
+			lines = IOUtils.readLines(new FileInputStream(deckFile), "UTF-8");
+			for (String line : lines) {
+				parseLine(line);
+			}
+			return true;
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage());
+			logger.debug("", e);
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+			logger.debug("", e);
 		}
+		return false;
+
 	}
 
 	private void parseLine(String line) {
