@@ -18,13 +18,17 @@ package it.zielke.a2pdf;
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+import it.zielke.a2pdf.data.Card;
 import it.zielke.a2pdf.data.Deck;
 import it.zielke.a2pdf.data.Settings;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
@@ -85,33 +89,32 @@ public class Anki2PDF {
 		HTMLFormatter htmlFormatter = new HTMLFormatter(
 				settings.getTemplateFront(), settings.getTemplateBack());
 		for (int i = 0; i <= 1; i++) {
-			try {
-				List<String> currentSideContent = htmlFormatter.format(
-						this.deck, i);
-
-				generatePDF(currentSideContent, getCurrentOutputFile(i));
-			} catch (DocumentException e) {
-				logger.error(e.getMessage());
-				logger.debug("", e);
-			} catch (IOException e) {
-				logger.error(e.getMessage());
-				logger.debug("", e);
-			} catch (Exception e) {
-				logger.error(e.getMessage());
-				logger.debug("", e);
+			List<String> currentSideContent = htmlFormatter
+					.format(this.deck, i);
+			if (i == Card.SIDE_BACK) {
+				currentSideContent = reorderPages(currentSideContent);
 			}
+			generatePDF(currentSideContent, getCurrentOutputFile(i));
 		}
 
 	}
 
+	private List<String> reorderPages(List<String> sideContent) {
+		LinkedList<String> ret = new LinkedList<String>();
+		int rowsize = settings.getRowSize();
+		for (int i = 0; i < sideContent.size(); i += rowsize) {
+			List<String> tmp = sideContent.subList(i,
+					Math.min(i + rowsize, sideContent.size()));
+			Collections.reverse(tmp);
+			ret.addAll(tmp);
+		}
+		return ret;
+	}
+
 	/**
-	 * Entry point. TODO use a fully featured command-line parser.
+	 * Entry point.
 	 * 
 	 * @param args
-	 *            arg0: deck export file location (required). arg1: output file
-	 *            location (optional). arg2: base directory; can be specified if
-	 *            not equal to the deck export directory
-	 * @throws Exception
 	 */
 	public static void main(String[] args) {
 		Settings settings = new Settings();
@@ -136,9 +139,7 @@ public class Anki2PDF {
 
 	}
 
-	public void generatePDF(List<String> content, File outputFile)
-			throws DocumentException, IOException {
-
+	public void generatePDF(List<String> content, File outputFile) {
 		OutputStream os = null;
 		try {
 			os = new FileOutputStream(outputFile);
@@ -161,11 +162,18 @@ public class Anki2PDF {
 
 			logger.debug("PDF File with " + content.size()
 					+ " documents rendered as PDF to " + outputFile);
+		} catch (DocumentException e) {
+			logger.error(e.getMessage());
+			logger.debug("", e);
+		} catch (FileNotFoundException e) {
+			logger.error(e.getMessage());
+			logger.debug("", e);
 		} finally {
 			if (os != null) {
 				try {
 					os.close();
 				} catch (IOException e) {
+					logger.debug(e.getMessage(), e);
 				}
 			}
 		}

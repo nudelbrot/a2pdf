@@ -19,8 +19,7 @@ import org.slf4j.LoggerFactory;
  */
 public class HTMLFormatter {
 
-	public static final int SIDE_FRONT = 0;
-	public static final int SIDE_BACK = 1;
+	
 	private File templateFront;
 	private File templateBack;
 	private String template;
@@ -46,7 +45,7 @@ public class HTMLFormatter {
 	 */
 	private void setTemplate(int side) {
 		File templateFile;
-		if (side == SIDE_FRONT) {
+		if (side == Card.SIDE_FRONT) {
 			templateFile = templateFront;
 		} else {
 			templateFile = templateBack;

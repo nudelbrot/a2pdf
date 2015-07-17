@@ -9,6 +9,7 @@ import org.kohsuke.args4j.Option;
  * 
  */
 public class Settings {
+	
 	@Option(name = "-i", required = true, usage = "input file")
 	private File deckFile;
 	@Option(name = "-o", usage = "output name pattern")
@@ -27,6 +28,9 @@ public class Settings {
 
 	@Option(name = "-v", usage = "increase verbosity")
 	private Boolean verbose = false;
+
+	@Option(name = "-r", usage = "cards per row")
+	private int rowSize = 3;
 
 	public File getDeckFile() {
 		return deckFile;
@@ -62,6 +66,10 @@ public class Settings {
 
 	public File getTemplateBack() {
 		return templateBack;
+	}
+
+	public int getRowSize() {
+		return rowSize;
 	}
 
 }

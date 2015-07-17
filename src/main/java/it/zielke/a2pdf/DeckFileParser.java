@@ -83,6 +83,8 @@ public class DeckFileParser {
 	private String replaceHTML(String s) {
 		// Anki sometimes uses non-breakable spaces. We want text to break
 		// so it does not overflow.
-		return s.replace("&nbsp;", " ");
+		String[] brsplits = s.replaceAll("</br>", "").split("<br>");
+		
+		return String.join("<br></br>", brsplits).replace("&nbsp;", " ");
 	}
 }

@@ -5,6 +5,9 @@ package it.zielke.a2pdf.data;
  * 
  */
 public class Card {
+	public static final int SIDE_FRONT = 0;
+	public static final int SIDE_BACK = 1;
+
 	private String[] text;
 
 	public Card() {
