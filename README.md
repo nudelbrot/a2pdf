@@ -84,6 +84,10 @@ While PDF export works great for simple cards, here are some limitations:
 - LaTEX cards may or may not work since I never looked into those exports.
 - Complex cards using third-party add-ons will prove to be problematic.
 
+## Problems?
+
+Give the -v or -d switch a try to get more verbose output.
+
 ## Documentation
 
 <a href="http://www.zielke.it/a2pdf/">http://www.zielke.it/a2pdf/</a>
